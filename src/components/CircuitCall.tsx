@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 
 interface CircuitCallProps {
   isConnected: boolean;
-  runStoreMessage: (contractAddress: string, message: string) => Promise<string>;
+  runStoreMessage: (
+    contractAddress: string,
+    message: string,
+    onProgress?: (step: string, percent: number) => void
+  ) => Promise<string>;
 }
 
-type CallStatus = 'idle' | 'proving' | 'submitting' | 'success' | 'error';
+type CallStatus = 'idle' | 'executing' | 'success' | 'error';
 
 export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreMessage }) => {
   const [contractAddress, setContractAddress] = useState(
@@ -13,6 +17,8 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
   );
   const [customMessage, setCustomMessage] = useState('');
   const [status, setStatus] = useState<CallStatus>('idle');
+  const [progressStep, setProgressStep] = useState<string>('');
+  const [progressPercent, setProgressPercent] = useState<number>(0);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -20,19 +26,17 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
     e.preventDefault();
     if (!isConnected || !contractAddress || !customMessage) return;
 
-    setStatus('proving');
+    setStatus('executing');
     setErrorMsg(null);
     setTxHash(null);
+    setProgressPercent(10);
+    setProgressStep('Starting circuit execution...');
 
     try {
-      // Step 1 & 2: Generate proof and submit tx
-      // The runStoreMessage callback abstracts:
-      // - Finding contract on-chain
-      // - FetchZkConfigProvider fetching keys
-      // - Browser generating proof via httpClientProofProvider
-      // - Wallet balancing and signing
-      // - Broadcast transaction
-      const hash = await runStoreMessage(contractAddress, customMessage);
+      const hash = await runStoreMessage(contractAddress, customMessage, (step, percent) => {
+        setProgressStep(step);
+        setProgressPercent(percent);
+      });
       
       setStatus('success');
       setTxHash(hash);
@@ -73,7 +77,7 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '13px', color: '#9ca3af', marginBottom: '6px' }}>
-              Preprod Contract Address
+              Contract Address (Preview Testnet)
             </label>
             <input
               type="text"
@@ -131,61 +135,55 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
 
           <button
             type="submit"
-            disabled={status === 'proving' || status === 'submitting' || !customMessage}
+            disabled={status === 'executing' || !customMessage}
             style={{
               width: '100%',
               padding: '12px 24px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: status === 'executing' ? 'rgba(16, 185, 129, 0.5)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#ffffff',
               border: 'none',
               borderRadius: '8px',
               fontSize: '16px',
               fontWeight: 500,
-              cursor: 'pointer',
+              cursor: status === 'executing' ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
               transition: 'all 0.2s ease',
             }}
           >
-            Execute storeMessage
+            {status === 'executing' ? 'Executing Circuit...' : 'Execute storeMessage'}
           </button>
 
           {/* Stepper Status Indicators */}
-          {(status === 'proving' || status === 'submitting') && (
+          {status === 'executing' && (
             <div
               style={{
                 marginTop: '20px',
                 padding: '16px',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
                 borderRadius: '8px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: '#6366f1',
-                    animation: 'pulse 1.5s infinite',
-                  }}
-                />
-                <div style={{ fontSize: '14px', color: '#e5e7eb' }}>
-                  {status === 'proving'
-                    ? '1. Generating ZK proof locally in browser...'
-                    : '2. Submitting transaction to Preprod network...'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#a5b4fc' }}>
+                  {progressStep}
+                </div>
+                <div style={{ fontSize: '12px', color: '#818cf8', fontFamily: 'monospace' }}>
+                  {progressPercent}%
                 </div>
               </div>
-              <div style={{ height: '4px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '3px', overflow: 'hidden' }}>
                 <div
                   style={{
                     height: '100%',
-                    width: status === 'proving' ? '50%' : '85%',
+                    width: `${progressPercent}%`,
                     backgroundColor: '#6366f1',
-                    transition: 'width 2s ease-in-out',
+                    transition: 'width 0.4s ease-in-out',
                   }}
                 />
+              </div>
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '10px', lineHeight: 1.4 }}>
+                ℹ️ <strong>Why does ZK Proving take ~15–30 seconds?</strong> Zero-Knowledge proofs require intense cryptographic curve operations to mathematically hide your input while verifying validity on-chain.
               </div>
             </div>
           )}
@@ -243,3 +241,4 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
     </div>
   );
 };
+

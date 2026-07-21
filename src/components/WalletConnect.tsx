@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface WalletConnectProps {
   isConnected: boolean;
@@ -6,7 +6,7 @@ interface WalletConnectProps {
   walletAddress: string | null;
   shieldedAddress: string | null;
   error: string | null;
-  connect: () => Promise<void>;
+  connect: (network: string) => Promise<void>;
   disconnect: () => void;
 }
 
@@ -19,6 +19,8 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
   connect,
   disconnect,
 }) => {
+  const [selectedNetwork, setSelectedNetwork] = useState('preview');
+
   const formatAddress = (addr: string | null) => {
     if (!addr) return '';
     return `${addr.slice(0, 10)}...${addr.slice(-10)}`;
@@ -75,25 +77,52 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
       )}
 
       {!isConnected ? (
-        <button
-          onClick={connect}
-          disabled={isConnecting}
-          style={{
-            width: '100%',
-            padding: '12px 24px',
-            background: isConnecting ? 'rgba(79, 70, 229, 0.5)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 500,
-            cursor: isConnecting ? 'not-allowed' : 'pointer',
+        <div>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', color: '#9ca3af', marginBottom: '6px' }}>
+              Select Wallet Network
+            </label>
+            <select
+              value={selectedNetwork}
+              onChange={(e) => setSelectedNetwork(e.target.value)}
+              disabled={isConnecting}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: '8px',
+                color: '#ffffff',
+                fontSize: '14px',
+              }}
+            >
+              <option value="preprod" style={{ backgroundColor: '#111827' }}>Preprod Testnet</option>
+              <option value="preview" style={{ backgroundColor: '#111827' }}>Preview Testnet</option>
+              <option value="undeployed" style={{ backgroundColor: '#111827' }}>Undeployed (Local Devnet)</option>
+              <option value="mainnet" style={{ backgroundColor: '#111827' }}>Mainnet</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() => connect(selectedNetwork)}
+            disabled={isConnecting}
+            style={{
+              width: '100%',
+              padding: '12px 24px',
+              background: isConnecting ? 'rgba(79, 70, 229, 0.5)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 500,
+              cursor: isConnecting ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
             boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
           }}
         >
           {isConnecting ? 'Connecting to Lace...' : 'Connect Lace Wallet'}
         </button>
+      </div>
       ) : (
         <div>
           <div style={{ marginBottom: '12px' }}>
