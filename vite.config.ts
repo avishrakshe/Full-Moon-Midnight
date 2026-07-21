@@ -9,6 +9,10 @@ export default defineConfig({
     wasm(),
     topLevelAwait()
   ],
+  define: {
+    'process.env': {},
+    global: 'globalThis',
+  },
   build: {
     target: 'esnext',
     minify: false,
@@ -25,3 +29,4 @@ export default defineConfig({
     },
   },
 });
+
