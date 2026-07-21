@@ -109,7 +109,13 @@ export function useMidnight(): UseMidnightResult {
     setIsConnecting(true);
     setError(null);
     try {
-      const wallet = window.midnight?.mnLace;
+      let wallet = window.midnight?.mnLace;
+      if (!wallet && window.midnight) {
+        const wallets = Object.values(window.midnight);
+        if (wallets.length > 0) {
+          wallet = wallets[0];
+        }
+      }
       if (!wallet) {
         throw new Error('Lace Beta Wallet for Midnight is not installed. Please install it to continue.');
       }
