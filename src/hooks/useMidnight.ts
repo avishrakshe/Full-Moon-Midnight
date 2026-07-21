@@ -127,13 +127,13 @@ export function useMidnight(): UseMidnightResult {
       try {
         api = await wallet.connect('preprod');
       } catch (err: any) {
-        const msg = err?.message || err?.toString() || '';
-        if (msg.includes('Network ID mismatch') || msg.includes('mismatch')) {
-          console.log('Preprod connection failed with Network ID mismatch, attempting preview...');
+        console.warn('Failed to connect to preprod, attempting preview fallback...', err);
+        try {
           api = await wallet.connect('preview');
           connectedNetwork = 'preview';
-        } else {
-          throw err;
+        } catch (innerErr: any) {
+          console.error('Fallback to preview also failed:', innerErr);
+          throw new Error(`Failed to connect to wallet. Preprod error: ${err?.message || err?.toString()}. Preview error: ${innerErr?.message || innerErr?.toString()}`);
         }
       }
       setConnectedApi(api);
