@@ -7,6 +7,9 @@ import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-conf
 import { findDeployedContract, type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { type MidnightProviders, type PrivateStateProvider } from '@midnight-ntwrk/midnight-js-types';
 import * as helloWorld from '../../contracts/managed/hello-world/contract';
+import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { MidnightBech32m, ShieldedAddress, ShieldedCoinPublicKey, ShieldedEncryptionPublicKey } from '@midnight-ntwrk/wallet-sdk-address-format';
+import { setNetworkId as setMidnightNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 class InMemoryPrivateStateProvider implements PrivateStateProvider {
   private states = new Map<string, any>();
@@ -75,9 +78,13 @@ export interface UseMidnightResult {
   walletAddress: string | null;
   shieldedAddress: string | null;
   error: string | null;
-  connect: () => Promise<void>;
+  connect: (network: string) => Promise<void>;
   disconnect: () => void;
-  runStoreMessage: (contractAddress: string, message: string) => Promise<string>;
+  runStoreMessage: (
+    contractAddress: string,
+    message: string,
+    onProgress?: (step: string, percent: number) => void
+  ) => Promise<string>;
 }
 
 export function useMidnight(): UseMidnightResult {
@@ -86,7 +93,7 @@ export function useMidnight(): UseMidnightResult {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [shieldedAddress, setShieldedAddress] = useState<string | null>(null);
   const [connectedApi, setConnectedApi] = useState<WalletConnectedAPI | null>(null);
-  const [networkId, setNetworkId] = useState<string>('preprod');
+  const [networkId, setNetworkId] = useState<string>('preview');
   const [error, setError] = useState<string | null>(null);
 
   // Auto-connect if already authorized
@@ -106,7 +113,7 @@ export function useMidnight(): UseMidnightResult {
     checkConnection();
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (selectedNetwork: string) => {
     setIsConnecting(true);
     setError(null);
     try {
@@ -121,30 +128,20 @@ export function useMidnight(): UseMidnightResult {
         throw new Error('Lace Beta Wallet for Midnight is not installed. Please install it to continue.');
       }
 
-      // Connect to the preprod network as per Level 2 specifications
-      let api;
-      let connectedNetwork = 'preprod';
-      try {
-        api = await wallet.connect('preprod');
-      } catch (err: any) {
-        console.warn('Failed to connect to preprod, attempting preview fallback...', err);
-        try {
-          api = await wallet.connect('preview');
-          connectedNetwork = 'preview';
-        } catch (innerErr: any) {
-          console.error('Fallback to preview also failed:', innerErr);
-          throw new Error(`Failed to connect to wallet. Preprod error: ${err?.message || err?.toString()}. Preview error: ${innerErr?.message || innerErr?.toString()}`);
-        }
-      }
+      const api = await wallet.connect(selectedNetwork);
       setConnectedApi(api);
-      setNetworkId(connectedNetwork);
+      setNetworkId(selectedNetwork);
+      setMidnightNetworkId(selectedNetwork as any);
 
       // Fetch wallet addresses
       const unshieldedData = await api.getUnshieldedAddress();
       const shieldedData = await api.getShieldedAddresses();
 
-      setWalletAddress(unshieldedData.unshieldedAddress);
-      setShieldedAddress(shieldedData.shieldedAddress);
+      const unshieldedStr = typeof unshieldedData === 'string' ? unshieldedData : (unshieldedData as any)?.unshieldedAddress;
+      const shieldedStr = typeof shieldedData === 'string' ? shieldedData : (shieldedData as any)?.shieldedAddress;
+
+      setWalletAddress(unshieldedStr);
+      setShieldedAddress(shieldedStr);
       setIsConnected(true);
     } catch (err: any) {
       console.error('Wallet connection failed:', err);
@@ -163,79 +160,117 @@ export function useMidnight(): UseMidnightResult {
     setError(null);
   }, []);
 
-  const runStoreMessage = useCallback(async (contractAddress: string, message: string): Promise<string> => {
-    if (!connectedApi || !walletAddress || !shieldedAddress) {
-      throw new Error('Wallet is not connected.');
-    }
-
-    // 1. Fetch network configuration from wallet API
-    const config = await connectedApi.getConfiguration();
-    
-    // Fallback to default preprod endpoints if not provided by wallet
-    const indexerUri = config.indexerUri || 'https://indexer.preprod.midnight.network/api/v4/graphql';
-    const indexerWsUri = config.indexerWsUri || 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws';
-    const proofServerUri = 'https://proof-server.preprod.midnight.network';
-
-    // 2. Setup ZK Config Provider pointing to local static assets
-    const zkConfigProvider = new FetchZkConfigProvider(
-      `${window.location.origin}/managed/hello-world`,
-      fetch.bind(window)
-    );
-
-    // 3. Setup Wallet & Midnight providers wrapping the DApp connector API
-    const walletProvider = {
-      getCoinPublicKey: () => {
-        // Parse Bech32m key to hex string
-        return parseCoinPublicKeyToHex(shieldedAddress, networkId);
-      },
-      getEncryptionPublicKey: () => {
-        // Parse Bech32m key to hex string
-        return parseEncPublicKeyToHex(shieldedAddress, networkId);
-      },
-      balanceTx: async (tx: any, ttl?: Date) => {
-        // balanceUnsealedTransaction takes a serialized transaction string.
-        // During contract call, the SDK passes a serialized transaction string or object.
-        // We serialize/deserialize as required.
-        const txString = typeof tx === 'string' ? tx : tx.toString();
-        const response = await connectedApi.balanceUnsealedTransaction(txString, {
-          payFees: true
-        });
-        return response.tx;
+  const runStoreMessage = useCallback(
+    async (
+      contractAddress: string,
+      message: string,
+      onProgress?: (step: string, percent: number) => void
+    ): Promise<string> => {
+      if (!connectedApi || !walletAddress || !shieldedAddress) {
+        throw new Error('Wallet is not connected.');
       }
-    };
 
-    const midnightProvider = {
-      submitTx: async (tx: any) => {
-        const txString = typeof tx === 'string' ? tx : tx.toString();
-        await connectedApi.submitTransaction(txString);
-        // Return a dummy transaction ID or try to hash it, or simply return empty string.
-        // The SDK's findDeployedContract watch logic uses the tx id to track inclusion.
-        return 'browser-submitted-tx';
+      onProgress?.('Initializing network configuration & loading ZK proving keys (22MB)...', 15);
+
+      // Configure global Midnight Network ID for SDK operations
+      setMidnightNetworkId(networkId as any);
+
+      // 1. Fetch network configuration from wallet API
+      const config = await connectedApi.getConfiguration();
+      
+      // Fallback to network-appropriate endpoints if not provided by wallet
+      const isPreview = networkId === 'preview';
+      const isLocal = networkId === 'undeployed';
+      const indexerUri = config.indexerUri || (isLocal ? 'http://127.0.0.1:8088/api/v4/graphql' : isPreview ? 'https://indexer.preview.midnight.network/api/v4/graphql' : 'https://indexer.preprod.midnight.network/api/v4/graphql');
+      const indexerWsUri = config.indexerWsUri || (isLocal ? 'ws://127.0.0.1:8088/api/v4/graphql/ws' : isPreview ? 'wss://indexer.preview.midnight.network/api/v4/graphql/ws' : 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws');
+      const proofServerUri = (config as any).proofServerUri || (isLocal ? 'http://127.0.0.1:6300' : 'http://127.0.0.1:6300');
+
+      // 2. Setup ZK Config Provider pointing to local static assets
+      const zkConfigProvider = new FetchZkConfigProvider(
+        `${window.location.origin}/managed/hello-world`,
+        fetch.bind(window)
+      );
+
+      // 3. Setup Wallet & Midnight providers wrapping the DApp connector API
+      const addressesData = await connectedApi.getShieldedAddresses();
+      const rawAddrStr = typeof addressesData === 'string'
+        ? addressesData
+        : (addressesData.shieldedAddress || shieldedAddress);
+
+      if (!rawAddrStr || typeof rawAddrStr !== 'string') {
+        throw new Error('Shielded address string is unavailable.');
       }
-    };
 
-    // 4. Assemble the MidnightProviders object
-    const providers: MidnightProviders<any, any, any> = {
-      privateStateProvider: new InMemoryPrivateStateProvider(),
-      publicDataProvider: indexerPublicDataProvider(indexerUri, indexerWsUri),
-      zkConfigProvider,
-      proofProvider: httpClientProofProvider(proofServerUri, zkConfigProvider),
-      walletProvider: walletProvider as any,
-      midnightProvider: midnightProvider as any
-    };
+      const decodedShieldedAddr = ShieldedAddress.codec.decode(
+        networkId,
+        MidnightBech32m.parse(rawAddrStr)
+      );
 
-    // 5. Load the deployed contract instance
-    const contract = await findDeployedContract(providers, {
-      compiledContract: helloWorld.Contract,
-      contractAddress: contractAddress
-    });
+      const walletProvider = {
+        getCoinPublicKey: () => {
+          return decodedShieldedAddr.coinPublicKey;
+        },
+        getEncryptionPublicKey: () => {
+          return decodedShieldedAddr.encryptionPublicKey;
+        },
+        balanceTx: async (tx: any, ttl?: Date) => {
+          onProgress?.('Balancing & requesting transaction signature from Lace Wallet...', 75);
+          const txString = typeof tx === 'string' ? tx : tx.toString();
+          const response = await connectedApi.balanceUnsealedTransaction(txString, {
+            payFees: true
+          });
+          return response.tx;
+        }
+      };
 
-    // 6. Invoke storeMessage circuit
-    const result = await contract.callTx.storeMessage(message);
-    
-    // Return transaction hash
-    return result.public.txId || 'Transaction Success';
-  }, [connectedApi, walletAddress, shieldedAddress, networkId]);
+      const midnightProvider = {
+        submitTx: async (tx: any) => {
+          onProgress?.('Submitting transaction to Midnight Network...', 90);
+          const txString = typeof tx === 'string' ? tx : tx.toString();
+          await connectedApi.submitTransaction(txString);
+          return 'browser-submitted-tx';
+        }
+      };
+
+      const rawProofProvider = httpClientProofProvider(proofServerUri, zkConfigProvider);
+      const proofProvider = {
+        prove: async (circuitId: string, witness: any) => {
+          onProgress?.('Generating ZK proof via local proof server (takes ~15-30s)...', 35);
+          return await rawProofProvider.prove(circuitId, witness);
+        }
+      };
+
+      // 4. Assemble the MidnightProviders object
+      const providers: MidnightProviders<any, any, any> = {
+        privateStateProvider: new InMemoryPrivateStateProvider(),
+        publicDataProvider: indexerPublicDataProvider(indexerUri, indexerWsUri, window.WebSocket),
+        zkConfigProvider,
+        proofProvider: proofProvider as any,
+        walletProvider: walletProvider as any,
+        midnightProvider: midnightProvider as any
+      };
+
+      // 5. Load the deployed contract instance
+      onProgress?.('Connecting to contract on-chain & verifying state...', 25);
+      const compiledContract = CompiledContract.make('hello-world', helloWorld.Contract).pipe(
+        CompiledContract.withVacantWitnesses
+      );
+
+      const contract = await findDeployedContract(providers, {
+        compiledContract: compiledContract as any,
+        contractAddress: contractAddress,
+        privateStateId: 'helloWorldPrivateState',
+        initialPrivateState: {}
+      });
+
+      // 6. Invoke storeMessage circuit
+      const result = await contract.callTx.storeMessage(message);
+      
+      onProgress?.('Transaction complete!', 100);
+      return result.public.txId || 'Transaction Success';
+    },
+    [connectedApi, walletAddress, shieldedAddress, networkId]
+  );
 
   return {
     isConnected,
