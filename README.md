@@ -207,7 +207,7 @@ On the Midnight blockchain, smart contracts split execution between the public l
 This section details the web frontend integration and wallet connection for Level 2 of the Midnight Builder Challenge.
 
 ## 🔗 Live Demo
-Live deployment URL: [https://full-moon-midnight.vercel.app](https://full-moon-midnight.vercel.app)
+Live deployment URL: [https://mn-demo.vercel.app](https://mn-demo.vercel.app)
 
 ## 📋 Deployed Contract Addresses
 | Network | Contract Address |
