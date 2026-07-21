@@ -200,3 +200,63 @@ On the Midnight blockchain, smart contracts split execution between the public l
 - **Public State:** This is the shared ledger state that is visible to everyone on the network (similar to public blockchains like Cardano or Ethereum). For example, in our `hello-world` contract, the `message` field is stored as a public state cell on-chain. Anyone can query the indexer to see the current value of the public message.
 - **Private Witness (Private State & Secret Input):** This is data that is kept local to the user's client machine and is never revealed to the public ledger. When executing a circuit, the user passes secret inputs (like private keys, private coin states, or private contract inputs) as *witnesses*. The Compact compiler uses these witnesses locally on the user's machine to generate a zero-knowledge proof (ZK proof) of the state transition. Only the ZK proof is sent to the network. The validator verifies the proof without ever seeing the underlying private witness data.
 
+---
+
+# 🌔 Level 2: Web Frontend & Browser ZK Proving
+
+This section details the web frontend integration and wallet connection for Level 2 of the Midnight Builder Challenge.
+
+## 🔗 Live Demo
+Live deployment URL: [https://full-moon-midnight.vercel.app](https://full-moon-midnight.vercel.app)
+
+## 📋 Deployed Contract Addresses
+| Network | Contract Address |
+| --- | --- |
+| **Preview** | `7f0643b12f38f45c7fef2e125543466ee7b8ea8a615800cd7ec0b0bd71127ae1` |
+| **Preprod** | `7f0643b12f38f45c7fef2e125543466ee7b8ea8a615800cd7ec0b0bd71127ae1` |
+
+## 🛠️ What This Does
+This frontend application provides a React + Vite dashboard to interact with the deployed `hello-world` contract:
+1. **Lace Wallet Connection:** Initiates connection to the Lace Beta Wallet, retrieves public unshielded addresses, and private shielded addresses.
+2. **Local Zero-Knowledge Proving:** Generates zero-knowledge proofs directly in the web browser using `@midnight-ntwrk/midnight-js-http-client-proof-provider` pointing to the public preprod proof server.
+3. **Smart Contract Interactivity:** Calls the `storeMessage` circuit to update the on-chain message state, balanced and signed using the connected Lace wallet.
+
+## 🔒 Privacy Model
+- **Public State:** The smart contract's `message` ledger cell is stored on-chain. Anyone can query the indexer and read the current value.
+- **Private Witness:** The `customMessage` text string is supplied locally on the user's browser as a private witness. The zero-knowledge proof validates that a valid state transition was computed locally without ever sending the message text directly to validators. Only the verified state update is published.
+
+## 🛡️ Privacy Claim: "Proved without revealing your input"
+This label in our UI denotes that the user's secret message remains completely private. The browser proof provider compiles the ZK proof locally on the client side. The validators on the Midnight Network verify the validity of the state update using only the generated proof, ensuring that the raw secret input is never exposed to the public blockchain or any third-party node.
+
+## 💻 Tech Stack
+- **Frontend Core:** React, Vite, TypeScript
+- **Styling:** Vanilla CSS (Glassmorphism Dark-Mode theme)
+- **Libraries & SDKs:**
+  - `@midnight-ntwrk/dapp-connector-api` — Integrates browser injected wallets (Lace)
+  - `@midnight-ntwrk/midnight-js-contracts` — Handles smart contract bindings
+  - `@midnight-ntwrk/midnight-js-fetch-zk-config-provider` — Fetches ZK compile artifacts
+  - `@midnight-ntwrk/midnight-js-http-client-proof-provider` — Client-side proof generation
+
+## 📋 Prerequisites
+- **Lace Beta Wallet** browser extension installed and configured for the **Preprod** network.
+- Wallet must be funded with **tNIGHT** (for transaction gas fees) and **DUST** (for registering UTXOs/private data).
+
+## 🚀 Run Locally
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start local Vite development server:
+   ```bash
+   npm run dev
+   ```
+3. Build optimized static assets for production:
+   ```bash
+   npm run build
+   ```
+
+## 🎥 Demo Video
+Placeholder for the walk-through recording: [Watch Level 2 Demo Video](https://youtube.com/placeholder-demo)
+
+
