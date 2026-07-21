@@ -20,67 +20,91 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
   disconnect,
 }) => {
   const [selectedNetwork, setSelectedNetwork] = useState('preview');
+  const [copiedUnshielded, setCopiedUnshielded] = useState(false);
+  const [copiedShielded, setCopiedShielded] = useState(false);
 
   const formatAddress = (addr: string | null) => {
     if (!addr) return '';
-    return `${addr.slice(0, 10)}...${addr.slice(-10)}`;
+    return `${addr.slice(0, 8)}...${addr.slice(-8)}`;
   };
 
-  const copyToClipboard = (text: string | null) => {
+  const copyToClipboard = (text: string | null, type: 'unshielded' | 'shielded') => {
     if (!text) return;
     navigator.clipboard.writeText(text);
-    alert('Address copied to clipboard!');
+    if (type === 'unshielded') {
+      setCopiedUnshielded(true);
+      setTimeout(() => setCopiedUnshielded(false), 2000);
+    } else {
+      setCopiedShielded(true);
+      setTimeout(() => setCopiedShielded(false), 2000);
+    }
   };
 
   return (
     <div
       style={{
-        background: 'rgba(17, 24, 39, 0.7)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '16px',
+        backgroundColor: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '20px',
         padding: '24px',
-        maxWidth: '500px',
-        margin: '0 auto 24px auto',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.05)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#f3f4f6' }}>Wallet Connection</h2>
-        <span
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>Lace Wallet Authorization</h2>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+            Connect your Lace Beta wallet to interact with Midnight zero-knowledge contracts.
+          </p>
+        </div>
+        <div
           style={{
-            display: 'inline-block',
-            width: '10px',
-            height: '10px',
-            borderRadius: '50%',
-            backgroundColor: isConnected ? '#10b981' : '#f59e0b',
-            boxShadow: isConnected ? '0 0 10px #10b981' : '0 0 10px #f59e0b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: isConnected ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+            padding: '6px 12px',
+            borderRadius: '9999px',
+            border: `1px solid ${isConnected ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
           }}
-        />
+        >
+          <span
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: isConnected ? '#22c55e' : '#f59e0b',
+              boxShadow: isConnected ? '0 0 8px #22c55e' : '0 0 8px #f59e0b',
+            }}
+          />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: isConnected ? '#15803d' : '#b45309' }}>
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
       </div>
 
       {error && (
         <div
           style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '12px',
             padding: '12px 16px',
-            color: '#f87171',
-            fontSize: '14px',
-            marginBottom: '16px',
+            color: '#b91c1c',
+            fontSize: '13px',
+            marginBottom: '20px',
             lineHeight: 1.4,
           }}
         >
-          <strong>Error: </strong> {error}
+          <strong>Connection Error: </strong> {error}
         </div>
       )}
 
       {!isConnected ? (
         <div>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', color: '#9ca3af', marginBottom: '6px' }}>
-              Select Wallet Network
+          <div style={{ marginBottom: '18px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+              Target Midnight Network
             </label>
             <select
               value={selectedNetwork}
@@ -88,108 +112,116 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
               disabled={isConnecting}
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                color: '#ffffff',
+                padding: '12px 14px',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '12px',
+                color: '#0f172a',
                 fontSize: '14px',
+                fontWeight: 500,
+                outline: 'none',
+                cursor: 'pointer',
               }}
             >
-              <option value="preprod" style={{ backgroundColor: '#111827' }}>Preprod Testnet</option>
-              <option value="preview" style={{ backgroundColor: '#111827' }}>Preview Testnet</option>
-              <option value="undeployed" style={{ backgroundColor: '#111827' }}>Undeployed (Local Devnet)</option>
-              <option value="mainnet" style={{ backgroundColor: '#111827' }}>Mainnet</option>
+              <option value="preview">Preview Testnet (Recommended)</option>
+              <option value="preprod">Preprod Testnet</option>
+              <option value="undeployed">Undeployed (Local Devnet)</option>
+              <option value="mainnet">Mainnet</option>
             </select>
           </div>
 
           <button
+            className="lime-btn"
             onClick={() => connect(selectedNetwork)}
             disabled={isConnecting}
-            style={{
-              width: '100%',
-              padding: '12px 24px',
-              background: isConnecting ? 'rgba(79, 70, 229, 0.5)' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 500,
-              cursor: isConnecting ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
-          }}
-        >
-          {isConnecting ? 'Connecting to Lace...' : 'Connect Lace Wallet'}
-        </button>
-      </div>
+            style={{ width: '100%', padding: '14px 20px', fontSize: '15px' }}
+          >
+            {isConnecting ? 'Connecting to Lace...' : 'Connect Lace Beta Wallet'}
+          </button>
+        </div>
       ) : (
         <div>
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Public Address (Unshielded)</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-              <code
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  color: '#e5e7eb',
-                  fontFamily: 'monospace',
-                  flex: 1,
-                  wordBreak: 'break-all',
-                }}
-              >
-                {formatAddress(walletAddress)}
-              </code>
-              <button
-                onClick={() => copyToClipboard(walletAddress)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#d1d5db',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Copy
-              </button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+            {/* Unshielded Address */}
+            <div
+              style={{
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '14px',
+              }}
+            >
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Unshielded Address (Public)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <code
+                  style={{
+                    fontSize: '13px',
+                    color: '#0f172a',
+                    fontWeight: 600,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {formatAddress(walletAddress)}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(walletAddress, 'unshielded')}
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#475569',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {copiedUnshielded ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>Private Address (Shielded)</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-              <code
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  color: '#e5e7eb',
-                  fontFamily: 'monospace',
-                  flex: 1,
-                  wordBreak: 'break-all',
-                }}
-              >
-                {formatAddress(shieldedAddress)}
-              </code>
-              <button
-                onClick={() => copyToClipboard(shieldedAddress)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  color: '#d1d5db',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                Copy
-              </button>
+            {/* Shielded Address */}
+            <div
+              style={{
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '14px',
+              }}
+            >
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Shielded Address (Private ZK)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <code
+                  style={{
+                    fontSize: '13px',
+                    color: '#0f172a',
+                    fontWeight: 600,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {formatAddress(shieldedAddress)}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(shieldedAddress, 'shielded')}
+                  style={{
+                    padding: '4px 10px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    color: '#475569',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {copiedShielded ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -197,13 +229,13 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
             onClick={disconnect}
             style={{
               width: '100%',
-              padding: '10px 20px',
+              padding: '12px 20px',
               backgroundColor: 'transparent',
-              color: '#9ca3af',
-              border: '1px solid rgba(156, 163, 175, 0.3)',
-              borderRadius: '8px',
+              color: '#64748b',
+              border: '1px solid #cbd5e1',
+              borderRadius: '9999px',
               fontSize: '14px',
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
             }}
