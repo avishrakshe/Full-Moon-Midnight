@@ -186,3 +186,17 @@ compiler to that version:
 compact update <version>
 compact use <version>
 ```
+
+---
+
+## 💡 Initial Product Idea: Confidential Sealed-Bid Auction
+
+A Zero-Knowledge Sealed-Bid Auction platform on Midnight where bidders can submit cryptographically shielded bids for high-value items. The smart contract validates that each bid is backed by sufficient collateral and is within allowed bounds, without revealing the individual bid amounts to any third party or even the auctioneer. Once the bidding period ends, a zero-knowledge proof verifies the winning bid and reveals only the winner's identity and the final transaction clearing price, preserving absolute bidding strategy privacy for all participants.
+
+## 🔒 Public State vs. Private Witness in Midnight
+
+On the Midnight blockchain, smart contracts split execution between the public ledger and local client machines to achieve data privacy:
+
+- **Public State:** This is the shared ledger state that is visible to everyone on the network (similar to public blockchains like Cardano or Ethereum). For example, in our `hello-world` contract, the `message` field is stored as a public state cell on-chain. Anyone can query the indexer to see the current value of the public message.
+- **Private Witness (Private State & Secret Input):** This is data that is kept local to the user's client machine and is never revealed to the public ledger. When executing a circuit, the user passes secret inputs (like private keys, private coin states, or private contract inputs) as *witnesses*. The Compact compiler uses these witnesses locally on the user's machine to generate a zero-knowledge proof (ZK proof) of the state transition. Only the ZK proof is sent to the network. The validator verifies the proof without ever seeing the underlying private witness data.
+
