@@ -86,6 +86,7 @@ export function useMidnight(): UseMidnightResult {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [shieldedAddress, setShieldedAddress] = useState<string | null>(null);
   const [connectedApi, setConnectedApi] = useState<WalletConnectedAPI | null>(null);
+  const [networkId, setNetworkId] = useState<string>('preprod');
   const [error, setError] = useState<string | null>(null);
 
   // Auto-connect if already authorized
@@ -121,8 +122,22 @@ export function useMidnight(): UseMidnightResult {
       }
 
       // Connect to the preprod network as per Level 2 specifications
-      const api = await wallet.connect('preprod');
+      let api;
+      let connectedNetwork = 'preprod';
+      try {
+        api = await wallet.connect('preprod');
+      } catch (err: any) {
+        const msg = err?.message || err?.toString() || '';
+        if (msg.includes('Network ID mismatch') || msg.includes('mismatch')) {
+          console.log('Preprod connection failed with Network ID mismatch, attempting preview...');
+          api = await wallet.connect('preview');
+          connectedNetwork = 'preview';
+        } else {
+          throw err;
+        }
+      }
       setConnectedApi(api);
+      setNetworkId(connectedNetwork);
 
       // Fetch wallet addresses
       const unshieldedData = await api.getUnshieldedAddress();
@@ -171,11 +186,11 @@ export function useMidnight(): UseMidnightResult {
     const walletProvider = {
       getCoinPublicKey: () => {
         // Parse Bech32m key to hex string
-        return parseCoinPublicKeyToHex(shieldedAddress, 'preprod');
+        return parseCoinPublicKeyToHex(shieldedAddress, networkId);
       },
       getEncryptionPublicKey: () => {
         // Parse Bech32m key to hex string
-        return parseEncPublicKeyToHex(shieldedAddress, 'preprod');
+        return parseEncPublicKeyToHex(shieldedAddress, networkId);
       },
       balanceTx: async (tx: any, ttl?: Date) => {
         // balanceUnsealedTransaction takes a serialized transaction string.
@@ -220,7 +235,7 @@ export function useMidnight(): UseMidnightResult {
     
     // Return transaction hash
     return result.public.txId || 'Transaction Success';
-  }, [connectedApi, walletAddress, shieldedAddress]);
+  }, [connectedApi, walletAddress, shieldedAddress, networkId]);
 
   return {
     isConnected,
