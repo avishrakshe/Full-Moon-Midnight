@@ -3,11 +3,65 @@ import { type InitialAPI, type WalletConnectedAPI } from '@midnight-ntwrk/dapp-c
 import { parseCoinPublicKeyToHex, parseEncPublicKeyToHex } from '@midnight-ntwrk/midnight-js-utils';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { findDeployedContract, type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
+import { type MidnightProviders, type PrivateStateProvider } from '@midnight-ntwrk/midnight-js-types';
 import * as helloWorld from '../../contracts/managed/hello-world/contract';
+
+class InMemoryPrivateStateProvider implements PrivateStateProvider {
+  private states = new Map<string, any>();
+  private signingKeys = new Map<string, any>();
+  
+  setContractAddress(address: any): void {}
+  
+  async set(privateStateId: string, state: any): Promise<void> {
+    this.states.set(privateStateId, state);
+  }
+  
+  async get(privateStateId: string): Promise<any | null> {
+    return this.states.get(privateStateId) ?? null;
+  }
+  
+  async remove(privateStateId: string): Promise<void> {
+    this.states.delete(privateStateId);
+  }
+  
+  async clear(): Promise<void> {
+    this.states.clear();
+  }
+  
+  async setSigningKey(address: any, signingKey: any): Promise<void> {
+    this.signingKeys.set(address.toString(), signingKey);
+  }
+  
+  async getSigningKey(address: any): Promise<any | null> {
+    return this.signingKeys.get(address.toString()) ?? null;
+  }
+  
+  async removeSigningKey(address: any): Promise<void> {
+    this.signingKeys.delete(address.toString());
+  }
+  
+  async clearSigningKeys(): Promise<void> {
+    this.signingKeys.clear();
+  }
+  
+  async exportPrivateStates(): Promise<any> {
+    return { format: 'midnight-private-state-export', encryptedPayload: '', salt: '' };
+  }
+  
+  async importPrivateStates(): Promise<any> {
+    return { imported: 0, skipped: 0, overwritten: 0 };
+  }
+  
+  async exportSigningKeys(): Promise<any> {
+    return { format: 'midnight-signing-key-export', encryptedPayload: '', salt: '' };
+  }
+  
+  async importSigningKeys(): Promise<any> {
+    return { imported: 0, skipped: 0, overwritten: 0 };
+  }
+}
 
 declare global {
   interface Window {
@@ -141,11 +195,7 @@ export function useMidnight(): UseMidnightResult {
 
     // 4. Assemble the MidnightProviders object
     const providers: MidnightProviders<any, any, any> = {
-      privateStateProvider: levelPrivateStateProvider({
-        privateStateStoreName: 'hello-world-state-browser',
-        accountId: walletAddress,
-        privateStoragePasswordProvider: () => 'Browser-Preprod-Development-Password-1',
-      }),
+      privateStateProvider: new InMemoryPrivateStateProvider(),
       publicDataProvider: indexerPublicDataProvider(indexerUri, indexerWsUri),
       zkConfigProvider,
       proofProvider: httpClientProofProvider(proofServerUri, zkConfigProvider),
