@@ -1,0 +1,20 @@
+// Midnight Builder Challenge Level 3 Counter & Message Compact contract
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// Public ledger state - visible on blockchain
+export ledger message: Opaque<"string">;
+export ledger counter: Cell<Uint<64>>;
+
+// Circuit to store a message and increment counter
+export circuit storeMessage(customMessage: Opaque<"string">): [] {
+    message = disclose(customMessage);
+    counter = counter + 1;
+}
+
+// Circuit to increment counter directly
+export circuit incrementCounter(): Uint<64> {
+    counter = counter + 1;
+    return counter;
+}
