@@ -3,8 +3,9 @@
 
 > A Midnight Network application for confidential zero-knowledge OTC desk transactions and smart contract interactions.
 
-## Live Demo
-[https://mn-demo.vercel.app](https://mn-demo.vercel.app)
+## Live Demo & Video Demonstration
+- **Live dApp:** [https://mn-demo.vercel.app](https://mn-demo.vercel.app)
+- **Demo Video:** [https://youtu.be/Ysz9uTXDtuY?si=oebajrsBWnGRnupm](https://youtu.be/Ysz9uTXDtuY?si=oebajrsBWnGRnupm)
 
 ## Contract Address
 | Network  | Address                                                          |

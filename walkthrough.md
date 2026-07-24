@@ -22,7 +22,7 @@ We have successfully completed Level 1 of the Midnight Builder Challenge! The co
 6. **Public State vs Private Witness Explanation:**
    - Added a detailed architectural breakdown to `README.md`.
 7. **Feature & Smart Contract Interaction Video Demo:**
-   - Attached demonstration video covering Lace Wallet integration, ZK proof generation, and `storeMessage` circuit execution.
+   - Attached demonstration video covering Lace Wallet integration, ZK proof generation, and `storeMessage` circuit execution: [Watch Video](https://youtu.be/Ysz9uTXDtuY?si=oebajrsBWnGRnupm)
 
 ---
 
