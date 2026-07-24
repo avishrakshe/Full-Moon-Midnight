@@ -40,6 +40,8 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
     }
   };
 
+  const isLaceAvailable = typeof window !== 'undefined' && !!(window.midnight?.mnLace || (window.midnight && Object.keys(window.midnight).length > 0));
+
   return (
     <div
       style={{
@@ -138,6 +140,28 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({
           >
             {isConnecting ? 'Connecting to Lace...' : 'Connect Lace Beta Wallet'}
           </button>
+
+          {!isLaceAvailable && (
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '14px 16px',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '12px',
+                fontSize: '13px',
+                color: '#166534',
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>⚡ How to Connect Lace Wallet:</strong>
+              <ol style={{ margin: '8px 0 0 0', paddingLeft: '18px' }}>
+                <li>Ensure <strong>Lace Beta Wallet</strong> extension is installed in Chrome.</li>
+                <li>In Lace extension settings, set Network to <strong>Midnight Preview</strong> (or Preprod).</li>
+                <li>Refresh this tab (F5) and click <strong>Connect Lace Beta Wallet</strong>.</li>
+              </ol>
+            </div>
+          )}
         </div>
       ) : (
         <div>
