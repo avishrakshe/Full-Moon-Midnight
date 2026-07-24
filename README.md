@@ -9,7 +9,7 @@
 ## Contract Address
 | Network  | Address                                                          |
 |----------|------------------------------------------------------------------|
-| Preprod  | `7f0643b12f38f45c7fef2e125543466ee7b8ea8a615800cd7ec0b0bd71127ae1` |
+| Preprod  | `02005a3059efee9eeedc1f7ca80004e0e5ea4e8bc1bfaad747e92bcbbbb4cb1a` |
 | Preview  | `7f0643b12f38f45c7fef2e125543466ee7b8ea8a615800cd7ec0b0bd71127ae1` |
 
 ## What This Does
