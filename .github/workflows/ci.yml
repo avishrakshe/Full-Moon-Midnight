@@ -11,10 +11,6 @@ jobs:
     name: Build & Run Unit Tests
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: mn-demo
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
