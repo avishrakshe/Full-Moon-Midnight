@@ -24,15 +24,13 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: 'mn-demo/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Verify managed ZK contract assets present
-        run: |
-          mkdir -p contracts/managed/hello-world
-          ls -la contracts/managed/hello-world
+        run: ls -la contracts/managed/hello-world
 
       - name: Run Level 3 Unit Tests (Circuit Logic, State Transitions, Privacy)
         run: npm test
