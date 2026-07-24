@@ -13,7 +13,7 @@ type CallStatus = 'idle' | 'executing' | 'success' | 'error';
 
 export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreMessage }) => {
   const [contractAddress, setContractAddress] = useState(
-    '7f0643b12f38f45c7fef2e125543466ee7b8ea8a615800cd7ec0b0bd71127ae1'
+    '02005a3059efee9eeedc1f7ca80004e0e5ea4e8bc1bfaad747e92bcbbbb4cb1a'
   );
   const [customMessage, setCustomMessage] = useState('');
   const [status, setStatus] = useState<CallStatus>('idle');
@@ -107,7 +107,7 @@ export const CircuitCall: React.FC<CircuitCallProps> = ({ isConnected, runStoreM
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '18px' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-              Contract Address (Preview Testnet)
+              Contract Address (Preprod Testnet)
             </label>
             <input
               type="text"

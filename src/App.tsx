@@ -99,7 +99,7 @@ export const App: React.FC = () => {
                 boxShadow: '0 0 8px #22c55e',
               }}
             />
-            <span>Preview Testnet · Contract 7f06...2ae1 · Active</span>
+            <span>Preprod Testnet · Contract 0200...4cb1a · Active</span>
           </div>
 
           {/* Right Network & Wallet Status */}
