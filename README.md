@@ -1,5 +1,5 @@
 # Private OTC Agent Desk on Midnight
-![CI](https://github.com/avishrakshe/Full-Moon-Midnight/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/avishrakshe/Private-OTC-Agent-Desk-On-Midnight-/actions/workflows/ci.yml/badge.svg)
 
 > A Midnight Network application for confidential zero-knowledge OTC desk transactions and smart contract interactions.
 
