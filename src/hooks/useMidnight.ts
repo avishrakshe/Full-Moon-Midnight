@@ -145,7 +145,11 @@ export function useMidnight(): UseMidnightResult {
       setIsConnected(true);
     } catch (err: any) {
       console.error('Wallet connection failed:', err);
-      setError(err?.message || err?.toString() || 'Failed to connect to Lace wallet.');
+      let msg = err?.message || err?.toString() || 'Failed to connect to Lace wallet.';
+      if (msg.toLowerCase().includes('locked')) {
+        msg = 'Lace Wallet is currently locked. Please click the Lace extension icon in your Chrome toolbar and enter your password to unlock it, then click Connect again.';
+      }
+      setError(msg);
       setIsConnected(false);
     } finally {
       setIsConnecting(false);
