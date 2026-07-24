@@ -64,7 +64,7 @@ export const App: React.FC = () => {
                 M
               </div>
               <span style={{ fontWeight: 800, fontSize: '18px', color: '#0f172a', letterSpacing: '-0.02em' }}>
-                Midnight ZK
+                Private OTC Desk
               </span>
             </div>
 

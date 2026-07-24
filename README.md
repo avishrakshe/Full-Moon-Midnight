@@ -1,7 +1,7 @@
-# mn-demo
+# Private OTC Agent Desk on Midnight
 ![CI](https://github.com/avishrakshe/Full-Moon-Midnight/actions/workflows/ci.yml/badge.svg)
 
-> A Midnight Network application scaffolded with create-mn-app for confidential zero-knowledge smart contract interactions.
+> A Midnight Network application for confidential zero-knowledge OTC desk transactions and smart contract interactions.
 
 ## Live Demo
 [https://mn-demo.vercel.app](https://mn-demo.vercel.app)
